@@ -4,13 +4,14 @@ defmodule MercadoPago do
   @grant_type_access "client_credentials"
 
   def get_payment_link(title, description, amount) do
-    case req_link do
+    case req_link(title, description, amount) do
       {:ok, %HTTPoison.Response{status_code: sc}} when sc >= 400 ->
         new_token()
         get_payment_link(title, description, amount)
 
       {:ok, %HTTPoison.Response{body: body}} ->
         Poison.decode!(body)
+        |> Map.get("init_point")
 
       {:error, _} ->
         IO.inspect("ERROR")
@@ -44,13 +45,13 @@ defmodule MercadoPago do
   defp token_payload do
     {:form,
      [
-       client_id: Application.get_env(:client_id),
-       client_secret: Application.get_env(:client_secret),
+       client_id: Application.get_env(:mercado_pago, :client_id),
+       client_secret: Application.get_env(:mercado_pago, :client_secret),
        grant_type: @grant_type_access
      ]}
   end
 
-  defp req_link do
+  defp req_link(title, description, amount) do
     HTTPoison.post(
       end_point_url(get_token()),
       link_payload(title, description, amount) |> Poison.encode!(),
@@ -58,7 +59,7 @@ defmodule MercadoPago do
     )
   end
 
-  defp link_payload do
+  defp link_payload(title, description, amount) do
     %{
       items: [
         %{
@@ -73,8 +74,8 @@ defmodule MercadoPago do
   end
 
   defp save_token(token) do
-    Agent.update(:teamplace, token)
-    token
+    Agent.update(:mp_token, fn _ -> token["access_token"] end)
+    token["access_token"]
   end
 
   defp end_point_url(token) do
