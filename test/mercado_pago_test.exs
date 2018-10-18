@@ -8,3 +8,5 @@ defmodule MercadoPagoTest do
     |> assert
   end
 end
+
+#TODO: Add feature test with wallaby
