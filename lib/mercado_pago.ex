@@ -4,6 +4,7 @@ defmodule MercadoPago do
   @grant_type_access "client_credentials"
 
   def get_payment_link(title, description, amount) do
+    IO.puts "GETTING LINK"
     case req_link(title, description, amount) do
       {:ok, %HTTPoison.Response{status_code: sc}} when sc >= 400 ->
         new_token()
@@ -45,8 +46,8 @@ defmodule MercadoPago do
   defp token_payload do
     {:form,
      [
-       client_id: Application.get_env(:mercado_pago, :client_id),
-       client_secret: Application.get_env(:mercado_pago, :client_secret),
+       client_id: Application.get_env(:mercado_pago, :client_id) || missing_conf_error("client_id"),
+       client_secret: Application.get_env(:mercado_pago, :client_secret) || missing_conf_error("client_secret"),
        grant_type: @grant_type_access
      ]}
   end
@@ -80,5 +81,9 @@ defmodule MercadoPago do
 
   defp end_point_url(token) do
     "https://api.mercadopago.com/checkout/preferences?access_token=#{token}"
+  end
+
+  defp missing_conf_error(key) do
+    IO.puts "#{key} config missing"
   end
 end
