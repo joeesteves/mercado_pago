@@ -19,7 +19,7 @@ defmodule MercadoPago do
     end
   end
 
-  defp get_token do
+  def get_token do
     Agent.get(:mp_token, fn state -> state end) || new_token
   end
 
@@ -70,7 +70,10 @@ defmodule MercadoPago do
           currency_id: "ARS",
           unit_price: amount
         }
-      ]
+      ],
+      payment_methods: %{
+        default_payment_method_id: "pagofacil"
+      }
     }
   end
 
