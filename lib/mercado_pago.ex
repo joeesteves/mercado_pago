@@ -3,9 +3,25 @@ defmodule MercadoPago do
   @ep_token @api_domain <> "oauth/token"
   @grant_type_access "client_credentials"
 
-  def get_payment_link(title, description, amount) do
-    IO.puts "GETTING LINK"
-    case req_link(title, description, amount) do
+  alias MercadoPago.Extract
+
+  def get_payment_page(link) do
+    :timer.sleep(2000)
+    case HTTPoison.get(link) do
+      {:ok, %HTTPoison.Response{headers: headers, body: body}} ->
+        action = Extract.form_action(body) |> IO.inspect
+        execution = Extract.input(body, "execution") |> IO.inspect
+        rej64 = Extract.input(body, "rej64") |> IO.inspect
+        cookies = Extract.cookies(headers) |> IO.inspect
+        rest = HTTPoison.post!(action, {:form, [execution: execution, payment_option_id: "rapipago", rej64: rej64, _eventId_next: "", email: "jose@ceibo.co"]}, [], hackney: [cookie: cookies])
+        |> Map.get(:body)
+        File.write!("mim.html", rest)
+        Regex.scan(~r/paymentId: '(\d+)'/, rest)
+    end
+  end
+
+  def get_payment_link(title, description, amount, opts \\ []) do
+    case req_link(title, description, amount, opts) do
       {:ok, %HTTPoison.Response{status_code: sc}} when sc >= 400 ->
         new_token()
         get_payment_link(title, description, amount)
@@ -46,21 +62,23 @@ defmodule MercadoPago do
   defp token_payload do
     {:form,
      [
-       client_id: Application.get_env(:mercado_pago, :client_id) || missing_conf_error("client_id"),
-       client_secret: Application.get_env(:mercado_pago, :client_secret) || missing_conf_error("client_secret"),
+       client_id:
+         Application.get_env(:mercado_pago, :client_id) || missing_conf_error("client_id"),
+       client_secret:
+         Application.get_env(:mercado_pago, :client_secret) || missing_conf_error("client_secret"),
        grant_type: @grant_type_access
      ]}
   end
 
-  defp req_link(title, description, amount) do
+  defp req_link(title, description, amount, opts) do
     HTTPoison.post(
       end_point_url(get_token()),
-      link_payload(title, description, amount) |> Poison.encode!(),
+      link_payload(title, description, amount, opts) |> Poison.encode!(),
       [{"Content-Type", "application/json"}]
     )
   end
 
-  defp link_payload(title, description, amount) do
+  defp base_link_payload(title, description, amount) do
     %{
       items: [
         %{
@@ -70,11 +88,19 @@ defmodule MercadoPago do
           currency_id: "ARS",
           unit_price: amount
         }
-      ],
-      payment_methods: %{
-        default_payment_method_id: "pagofacil"
-      }
+      ]
     }
+  end
+
+  defp link_payload(title, description, amount, []) do
+    base_link_payload(title, description, amount)
+  end
+
+  defp link_payload(title, description, amount, opts) do
+    base_link_payload(title, description, amount)
+    |> Map.put(:payment_methods, %{
+      default_payment_method_id: "rapipago"
+    })
   end
 
   defp save_token(token) do
@@ -87,6 +113,6 @@ defmodule MercadoPago do
   end
 
   defp missing_conf_error(key) do
-    IO.puts "#{key} config missing"
+    IO.puts("#{key} config missing")
   end
 end
