@@ -4,7 +4,7 @@ defmodule MercadoPago do
   @grant_type_access "client_credentials"
 
   def get_payment_link(title, description, amount) do
-    IO.puts "GETTING LINK"
+    IO.puts "REQUESTING LINK"
     case req_link(title, description, amount) do
       {:ok, %HTTPoison.Response{status_code: sc}} when sc >= 400 ->
         new_token()
