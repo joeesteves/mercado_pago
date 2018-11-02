@@ -1,4 +1,12 @@
 defmodule MercadoPago do
+  @moduledoc """
+    This module contains functions to interact with MercadoPago API. On the current version this are its features
+    * get_token
+    * get_payment_link
+    * Based on config it creates methods named after the available payment_methods
+    * i.e if config :mercado_pago, payment_methods: ["rapipago", "pagofacil"]
+    * it creates get_link_and_rapipago_code and get_link_and_pagomiscuentas_code
+  """
   alias MercadoPago.Extract
 
   @api_domain "https://api.mercadopago.com/"
@@ -7,10 +15,7 @@ defmodule MercadoPago do
   @ep_checkout @api_domain <> "checkout/preferences"
   @payment_methods Application.get_env(:mercado_pago, :payment_methods) || []
 
-  # Based on config it creates methods named after the available payment_methods
-  # i.e if config :mercado_pago, payment_methods: ["rapipago", "pagofacil"]
-  # it creates get_link_and_rapipago_code and get_link_and_pagomiscuentas_code
-
+  # Dynamically generated functions
   for name <- @payment_methods do
     def unquote(String.to_atom("get_link_and_" <> name <> "_code"))(title, description, amount) do
       get_payment_link(title, description, amount, payment_method: unquote(name))
@@ -18,6 +23,9 @@ defmodule MercadoPago do
     end
   end
 
+  @doc """
+    Returns http_link_string
+  """
   def get_payment_link(title, description, amount, opts \\ []) do
     IO.puts "GETTING PAYMENT LINK..."
     retrying = opts[:retry]
