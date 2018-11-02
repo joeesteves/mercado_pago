@@ -9,7 +9,7 @@ defmodule MercadoPago.Application do
     # List all child processes to be supervised
     children = [
       # Starts a worker by calling: MercadoPago.Worker.start_link(arg)
-      {MercadoPago.Worker, []},
+      {MercadoPago.Worker, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
