@@ -4,8 +4,6 @@ defmodule MercadoPago.Extract do
   end
 
   def input(body, name) do
-
-    name == "rej64" && File.write!("body.html", body)
     [[_, value] | _] = Regex.scan(~r/name="#{name}".*value="([\w, \-, \|, \=, \+, \/]*)"/, body)
     value
   end

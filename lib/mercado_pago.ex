@@ -1,22 +1,36 @@
 defmodule MercadoPago do
+  alias MercadoPago.Extract
+
   @api_domain "https://api.mercadopago.com/"
   @ep_token @api_domain <> "oauth/token"
   @grant_type_access "client_credentials"
+  @payment_methods Application.get_env(:mercado_pago, :payment_methods) || []
 
-  alias MercadoPago.Extract
+  for name <- @payment_methods do
+    def unquote(String.to_atom("get_" <> name <> "_code"))(title, description, amount) do
+      get_payment_link(title, description, amount, payment_method: unquote(name))
+      |> find_code(payment_method: unquote(name))
+    end
+  end
 
-  def get_payment_page(link) do
-    :timer.sleep(2000)
-    case HTTPoison.get(link) do
-      {:ok, %HTTPoison.Response{headers: headers, body: body}} ->
-        action = Extract.form_action(body) |> IO.inspect
-        execution = Extract.input(body, "execution") |> IO.inspect
-        rej64 = Extract.input(body, "rej64") |> IO.inspect
-        cookies = Extract.cookies(headers) |> IO.inspect
-        rest = HTTPoison.post!(action, {:form, [execution: execution, payment_option_id: "rapipago", rej64: rej64, _eventId_next: "", email: "jose@ceibo.co"]}, [], hackney: [cookie: cookies])
-        |> Map.get(:body)
-        File.write!("mim.html", rest)
-        Regex.scan(~r/paymentId: '(\d+)'/, rest)
+  def find_code(link, opts \\ []) do
+    try do
+      case HTTPoison.get(link) do
+        {:ok, %HTTPoison.Response{headers: headers, body: body}} ->
+          action = Extract.form_action(body)
+          execution = Extract.input(body, "execution")
+          rej64 = Extract.input(body, "rej64")
+          cookies = Extract.cookies(headers)
+
+          res = HTTPoison.post!(action, {:form, [execution: execution, payment_option_id: "rapipago", rej64: rej64, _eventId_next: "", email: "jose@ceibo.co"]}, [], hackney: [cookie: cookies])
+          |> Map.get(:body)
+
+          code = Regex.named_captures(~r/paymentId: '(?<code>\d+)'/, res)["code"]
+          |> String.split_at(5) |> Tuple.to_list |> Enum.join("-")
+          {:ok, link, code}
+     end
+    rescue
+      _ -> {:error, link}
     end
   end
 
@@ -96,10 +110,10 @@ defmodule MercadoPago do
     base_link_payload(title, description, amount)
   end
 
-  defp link_payload(title, description, amount, opts) do
+  defp link_payload(title, description, amount, payment_method: payment_method) do
     base_link_payload(title, description, amount)
     |> Map.put(:payment_methods, %{
-      default_payment_method_id: "rapipago"
+      default_payment_method_id: payment_method
     })
   end
 
