@@ -14,6 +14,7 @@ defmodule MercadoPago do
   end
 
   def find_code(link, opts \\ []) do
+    IO.puts "FINDING CODE..."
     try do
       case HTTPoison.get(link) do
         {:ok, %HTTPoison.Response{headers: headers, body: body}} ->
@@ -35,10 +36,14 @@ defmodule MercadoPago do
   end
 
   def get_payment_link(title, description, amount, opts \\ []) do
+    IO.puts "GETTING PAYMENT LINK..."
+    retrying = opts[:retry]
     case req_link(title, description, amount, opts) do
+      {:ok, %HTTPoison.Response{status_code: sc, body: body}} when sc >= 400 and retrying ->
+        IO.inspect body
       {:ok, %HTTPoison.Response{status_code: sc}} when sc >= 400 ->
         new_token()
-        get_payment_link(title, description, amount)
+        get_payment_link(title, description, amount,  opts ++ [retry: true])
 
       {:ok, %HTTPoison.Response{body: body}} ->
         Poison.decode!(body)
@@ -110,7 +115,7 @@ defmodule MercadoPago do
     base_link_payload(title, description, amount)
   end
 
-  defp link_payload(title, description, amount, payment_method: payment_method) do
+  defp link_payload(title, description, amount, [{:payment_method, payment_method} | _]) do
     base_link_payload(title, description, amount)
     |> Map.put(:payment_methods, %{
       default_payment_method_id: payment_method
