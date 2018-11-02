@@ -32,6 +32,7 @@ defmodule MercadoPago do
     case req_link(title, description, amount, opts) do
       {:ok, %HTTPoison.Response{status_code: sc, body: body}} when sc >= 400 and retrying ->
         IO.inspect body
+        "Sin link de pago..."
       {:ok, %HTTPoison.Response{status_code: sc}} when sc >= 400 ->
         new_token()
         get_payment_link(title, description, amount,  opts ++ [retry: true])
