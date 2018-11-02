@@ -5,6 +5,8 @@ use Mix.Config
 config :mercado_pago, client_id: System.get_env("MP_CLIENT_ID")
 config :mercado_pago, client_secret: System.get_env("MP_CLIENT_SECRET")
 config :mercado_pago, payment_methods: ["rapipago", "pagofacil"]
+config :mercado_pago, no_reply_mail: "no-reply@ceibo.co"
+
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this
 # file won't be loaded nor affect the parent project. For this reason,

@@ -7,7 +7,7 @@ defmodule MercadoPago do
   @payment_methods Application.get_env(:mercado_pago, :payment_methods) || []
 
   for name <- @payment_methods do
-    def unquote(String.to_atom("get_" <> name <> "_code"))(title, description, amount) do
+    def unquote(String.to_atom("get_link_and_" <> name <> "_code"))(title, description, amount) do
       get_payment_link(title, description, amount, payment_method: unquote(name))
       |> find_code(payment_method: unquote(name))
     end
@@ -22,7 +22,7 @@ defmodule MercadoPago do
           rej64 = Extract.input(body, "rej64")
           cookies = Extract.cookies(headers)
 
-          res = HTTPoison.post!(action, {:form, [execution: execution, payment_option_id: "rapipago", rej64: rej64, _eventId_next: "", email: "jose@ceibo.co"]}, [], hackney: [cookie: cookies])
+          res = HTTPoison.post!(action, {:form, [execution: execution, payment_option_id: "rapipago", rej64: rej64, _eventId_next: "", email: Application.get_env(:mercado_pago, :no_reply_mail)]}, [], hackney: [cookie: cookies])
           |> Map.get(:body)
 
           code = Regex.named_captures(~r/paymentId: '(?<code>\d+)'/, res)["code"]
