@@ -4,34 +4,17 @@ defmodule MercadoPago do
   @api_domain "https://api.mercadopago.com/"
   @ep_token @api_domain <> "oauth/token"
   @grant_type_access "client_credentials"
+  @ep_checkout @api_domain <> "checkout/preferences"
   @payment_methods Application.get_env(:mercado_pago, :payment_methods) || []
+
+  # Based on config it creates methods named after the available payment_methods
+  # i.e if config :mercado_pago, payment_methods: ["rapipago", "pagofacil"]
+  # it creates get_link_and_rapipago_code and get_link_and_pagomiscuentas_code
 
   for name <- @payment_methods do
     def unquote(String.to_atom("get_link_and_" <> name <> "_code"))(title, description, amount) do
       get_payment_link(title, description, amount, payment_method: unquote(name))
       |> find_code(payment_method: unquote(name))
-    end
-  end
-
-  def find_code(link, opts \\ []) do
-    IO.puts "FINDING CODE..."
-    try do
-      case HTTPoison.get(link) do
-        {:ok, %HTTPoison.Response{headers: headers, body: body}} ->
-          action = Extract.form_action(body)
-          execution = Extract.input(body, "execution")
-          rej64 = Extract.input(body, "rej64")
-          cookies = Extract.cookies(headers)
-
-          res = HTTPoison.post!(action, {:form, [execution: execution, payment_option_id: "rapipago", rej64: rej64, _eventId_next: "", email: Application.get_env(:mercado_pago, :no_reply_mail)]}, [], hackney: [cookie: cookies])
-          |> Map.get(:body)
-
-          code = Regex.named_captures(~r/paymentId: '(?<code>\d+)'/, res)["code"]
-          |> String.split_at(5) |> Tuple.to_list |> Enum.join("-")
-          {:ok, link, code}
-     end
-    rescue
-      _ -> {:error, link}
     end
   end
 
@@ -56,6 +39,28 @@ defmodule MercadoPago do
 
   def get_token do
     Agent.get(:mp_token, fn state -> state end) || new_token
+  end
+
+  defp find_code(link, opts \\ []) do
+    IO.puts "FINDING CODE..."
+    try do
+      case HTTPoison.get(link) do
+        {:ok, %HTTPoison.Response{headers: headers, body: body}} ->
+          action = Extract.form_action(body)
+          execution = Extract.input(body, "execution")
+          rej64 = Extract.input(body, "rej64")
+          cookies = Extract.cookies(headers)
+
+          res = HTTPoison.post!(action, {:form, [execution: execution, payment_option_id: "rapipago", rej64: rej64, _eventId_next: "", email: Application.get_env(:mercado_pago, :no_reply_mail)]}, [], hackney: [cookie: cookies])
+          |> Map.get(:body)
+
+          code = Regex.named_captures(~r/paymentId: '(?<code>\d+)'/, res)["code"]
+          |> String.split_at(5) |> Tuple.to_list |> Enum.join("-")
+          {:ok, link, code}
+     end
+    rescue
+      _ -> {:error, link}
+    end
   end
 
   defp new_token() do
@@ -128,7 +133,7 @@ defmodule MercadoPago do
   end
 
   defp end_point_url(token) do
-    "https://api.mercadopago.com/checkout/preferences?access_token=#{token}"
+    @ep_checkout <> "?access_token=" <> token
   end
 
   defp missing_conf_error(key) do
