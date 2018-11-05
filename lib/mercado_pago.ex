@@ -27,22 +27,27 @@ defmodule MercadoPago do
     Returns http_link_string
   """
   def get_payment_link(title, description, amount, opts \\ []) do
-    IO.puts "GETTING PAYMENT LINK..."
+    IO.puts("GETTING PAYMENT LINK...")
     retrying = opts[:retry]
+
     case req_link(title, description, amount, opts) do
       {:ok, %HTTPoison.Response{status_code: sc, body: body}} when sc >= 400 and retrying ->
-        IO.inspect body
-        "Sin link de pago..."
+        IO.inspect(body)
+        {:error, "Sin link de pago..."}
+
       {:ok, %HTTPoison.Response{status_code: sc}} when sc >= 400 ->
         new_token()
-        get_payment_link(title, description, amount,  opts ++ [retry: true])
+        get_payment_link(title, description, amount, opts ++ [retry: true])
 
       {:ok, %HTTPoison.Response{body: body}} ->
-        Poison.decode!(body)
-        |> Map.get("init_point")
+        link =
+          Poison.decode!(body)
+          |> Map.get("init_point")
+
+        {:ok, link}
 
       {:error, _} ->
-        IO.inspect("ERROR")
+        {:error, "Error de conexion"}
     end
   end
 
@@ -51,24 +56,50 @@ defmodule MercadoPago do
   end
 
   defp find_code(link, opts \\ []) do
-    IO.puts "FINDING CODE..."
-    try do
-      case HTTPoison.get(link) do
-        {:ok, %HTTPoison.Response{headers: headers, body: body}} ->
-          action = Extract.form_action(body)
-          execution = Extract.input(body, "execution")
-          rej64 = Extract.input(body, "rej64")
-          cookies = Extract.cookies(headers)
+    IO.puts("FINDING CODE...")
 
-          res = HTTPoison.post!(action, {:form, [execution: execution, payment_option_id: "rapipago", rej64: rej64, _eventId_next: "", email: Application.get_env(:mercado_pago, :no_reply_mail)]}, [], hackney: [cookie: cookies])
-          |> Map.get(:body)
+    case link do
+      {:error, msg} ->
+        {:error, msg}
 
-          code = Regex.named_captures(~r/paymentId: '(?<code>\d+)'/, res)["code"]
-          |> String.split_at(5) |> Tuple.to_list |> Enum.join("-")
-          {:ok, link, code}
-     end
-    rescue
-      _ -> {:error, link}
+      {:ok, link} ->
+        try do
+          case HTTPoison.get(link) do
+            {:ok, %HTTPoison.Response{headers: headers, body: body}} ->
+              action = Extract.form_action(body)
+              execution = Extract.input(body, "execution")
+              rej64 = Extract.input(body, "rej64")
+              cookies = Extract.cookies(headers)
+
+              res =
+                HTTPoison.post!(
+                  action,
+                  {:form,
+                   [
+                     execution: execution,
+                     payment_option_id: "rapipago",
+                     rej64: rej64,
+                     _eventId_next: "",
+                     email: Application.get_env(:mercado_pago, :no_reply_mail)
+                   ]},
+                  [],
+                  hackney: [cookie: cookies]
+                )
+                |> Map.get(:body)
+
+              code =
+                Regex.named_captures(~r/paymentId: '(?<code>\d+)'/, res)["code"]
+                |> String.split_at(5)
+                |> Tuple.to_list()
+                |> Enum.join("-")
+
+              {:ok, link, code}
+          end
+        rescue
+          _ -> {:error, link}
+        end
+
+        _ -> {:error, "error no definido"}
     end
   end
 
