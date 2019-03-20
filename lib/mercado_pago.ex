@@ -142,7 +142,7 @@ defmodule MercadoPago do
 
   # Transforms link to legacy link
   defp transform_to_v0(link) do
-    %{"pref_id" => pref_id} = Regex.named_captures(~r/(?<base>^.+)v1\/redirect\?preference\-id=(?<pref_id>.+$)/, link) |> IO.inspect
+    %{"pref_id" => pref_id} = Regex.named_captures(~r/(?<base>^.+)v1\/redirect\?preference\-id=(?<pref_id>.+$)/, link)
 
     "https://www.mercadopago.com/mla/checkout/start?pref_id=#{pref_id}"
   end
