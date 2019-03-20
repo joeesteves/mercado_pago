@@ -32,7 +32,6 @@ defmodule MercadoPago do
 
     case req_link(title, description, amount, opts) do
       {:ok, %HTTPoison.Response{status_code: sc, body: body}} when sc >= 400 and retrying ->
-        IO.inspect(body)
         {:error, "Sin link de pago..."}
 
       {:ok, %HTTPoison.Response{status_code: sc}} when sc >= 400 ->
@@ -43,7 +42,7 @@ defmodule MercadoPago do
         link =
           Poison.decode!(body)
           |> Map.get("init_point")
-
+          |> transform_to_v0
         {:ok, link}
 
       {:error, _} ->
@@ -57,7 +56,6 @@ defmodule MercadoPago do
 
   defp find_code(link, opts \\ []) do
     IO.puts("FINDING CODE...")
-
     case link do
       {:error, msg} ->
         {:error, msg}
@@ -141,6 +139,14 @@ defmodule MercadoPago do
       [{"Content-Type", "application/json"}]
     )
   end
+
+  # Transforms link to legacy link
+  defp transform_to_v0(link) do
+    %{"pref_id" => pref_id} = Regex.named_captures(~r/(?<base>^.+)v1\/redirect\?preference\-id=(?<pref_id>.+$)/, link) |> IO.inspect
+
+    "https://www.mercadopago.com/mla/checkout/start?pref_id=#{pref_id}"
+  end
+
 
   defp base_link_payload(title, description, amount) do
     %{
