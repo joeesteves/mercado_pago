@@ -1,0 +1,103 @@
+{
+  "acquirer": null,
+  "acquirer_reconciliation": [],
+  "additional_info": {},
+  "authorization_code": "669835",
+  "binary_mode": true,
+  "call_for_authorize_id": null,
+  "captured": true,
+  "card": {
+    "cardholder": {
+      "identification": {
+        "number": "16218327",
+        "type": "DNI"
+      },
+      "name": "OSCAR ESPINOSA"
+    },
+    "date_created": "2019-06-06T11:01:02.000-04:00",
+    "date_last_updated": null,
+    "expiration_month": 8,
+    "expiration_year": 2020,
+    "first_six_digits": "523920",
+    "id": "339674316",
+    "last_four_digits": "1850"
+  },
+  "collector_id": 280994634,
+  "counter_currency": null,
+  "coupon_amount": 0,
+  "currency_id": "ARS",
+  "date_approved": "2019-06-21T11:28:41.000-04:00",
+  "date_created": "2019-06-21T11:28:38.000-04:00",
+  "date_last_updated": "2019-06-21T11:28:41.000-04:00",
+  "date_of_expiration": null,
+  "deduction_schema": null,
+  "description": "Link de pago despacho DDDON - 7045 ** 0072 - Casa de Restauracion - Jabes",
+  "differential_pricing_id": null,
+  "external_reference": null,
+  "fee_details": [
+    {
+      "amount": 5.31,
+      "fee_payer": "collector",
+      "type": "mercadopago_fee"
+    }
+  ],
+  "id": 4888529645,
+  "installments": 1,
+  "issuer_id": "3",
+  "live_mode": true,
+  "merchant_account_id": null,
+  "merchant_number": null,
+  "metadata": {},
+  "money_release_date": "2019-06-21T11:28:41.000-04:00",
+  "money_release_schema": null,
+  "notification_url": null,
+  "operation_type": "regular_payment",
+  "order": {
+    "id": "1116960551",
+    "type": "mercadopago"
+  },
+  "payer": {
+    "email": "oscar.espinosa@live.com.ar",
+    "entity_type": null,
+    "first_name": "Abi Raquel ",
+    "id": "46862043",
+    "identification": {
+      "number": "39754038",
+      "type": "DNI"
+    },
+    "last_name": "Espinosa",
+    "operator_id": null,
+    "phone": {
+      "area_code": null,
+      "extension": null,
+      "number": "03416238098"
+    },
+    "type": "registered"
+  },
+  "payment_method_id": "master",
+  "payment_type_id": "credit_card",
+  "pos_id": null,
+  "processing_mode": "aggregator",
+  "refunds": [],
+  "shipping_amount": 0,
+  "sponsor_id": null,
+  "statement_descriptor": "MERPAGO - BANCODEALIME",
+  "status": "approved",
+  "status_detail": "accredited",
+  "store_id": null,
+  "taxes_amount": 0,
+  "transaction_amount": 80,
+  "transaction_amount_refunded": 0,
+  "transaction_details": {
+    "acquirer_reference": null,
+    "external_resource_url": null,
+    "financial_institution": null,
+    "installment_amount": 80,
+    "net_received_amount": 74.69,
+    "overpaid_amount": 0,
+    "payable_deferral_period": null,
+    "payment_method_reference_id": "989668440128628",
+    "total_paid_amount": 80
+  },
+  "shipping_cost": 0
+}

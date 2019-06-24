@@ -1,0 +1,5 @@
+ curl https://api.mercadopago.com/v1/payments/search\?range\=date_created\&begin_date\=2019-06-23T15:07:20.000-04:00\&end_date\=2019-06-25T15:07:20.000-04:00\&limit\=2\&access_token\=$AT | jq
+
+para hacer querys tenemos que usar iso_8601 en dates
+
+use iso_8601 to pass query dates.. and range to specify filtered field 
