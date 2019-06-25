@@ -12,7 +12,7 @@ defmodule MercadoPago do
   @api_domain "https://api.mercadopago.com/"
   @ep_token @api_domain <> "oauth/token"
   @grant_type_access "client_credentials"
-  @ep_checkout @api_domain <> "checkout/preferences"
+  @ep_checkout "checkout/preferences"
   @payment_methods Application.get_env(:mercado_pago, :payment_methods) || []
 
   # Dynamically generated functions
@@ -20,6 +20,18 @@ defmodule MercadoPago do
     def unquote(String.to_atom("get_link_and_" <> name <> "_code"))(title, description, amount) do
       get_payment_link(title, description, amount, payment_method: unquote(name))
       |> find_code(payment_method: unquote(name))
+    end
+  end
+
+  def get_payment(id) do
+    uri = end_point_url("v1/payments/#{id}")
+
+    case HTTPoison.get(uri) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        body
+
+      _ ->
+        {:error, "Error al buscar información de un pago"}
     end
   end
 
@@ -43,6 +55,7 @@ defmodule MercadoPago do
           Poison.decode!(body)
           |> Map.get("init_point")
           |> transform_to_v0
+
         {:ok, link}
 
       {:error, _} ->
@@ -56,6 +69,7 @@ defmodule MercadoPago do
 
   defp find_code(link, opts \\ []) do
     IO.puts("FINDING CODE...")
+
     case link do
       {:error, msg} ->
         {:error, msg}
@@ -97,7 +111,8 @@ defmodule MercadoPago do
           _ -> {:error, link}
         end
 
-        _ -> {:error, "error no definido"}
+      _ ->
+        {:error, "error no definido"}
     end
   end
 
@@ -134,7 +149,7 @@ defmodule MercadoPago do
 
   defp req_link(title, description, amount, opts) do
     HTTPoison.post(
-      end_point_url(get_token()),
+      end_point_url(@ep_checkout),
       link_payload(title, description, amount, opts) |> Poison.encode!(),
       [{"Content-Type", "application/json"}]
     )
@@ -142,11 +157,11 @@ defmodule MercadoPago do
 
   # Transforms link to legacy link
   defp transform_to_v0(link) do
-    %{"pref_id" => pref_id} = Regex.named_captures(~r/(?<base>^.+)v1\/redirect\?preference\-id=(?<pref_id>.+$)/, link)
+    %{"pref_id" => pref_id} =
+      Regex.named_captures(~r/(?<base>^.+)v1\/redirect\?preference\-id=(?<pref_id>.+$)/, link)
 
     "https://www.mercadopago.com/mla/checkout/start?pref_id=#{pref_id}"
   end
-
 
   defp base_link_payload(title, description, amount) do
     %{
@@ -178,8 +193,8 @@ defmodule MercadoPago do
     token["access_token"]
   end
 
-  defp end_point_url(token) do
-    @ep_checkout <> "?access_token=" <> token
+  defp end_point_url(resource_url) do
+    @api_domain <> resource_url <> "?access_token=" <> get_token()
   end
 
   defp missing_conf_error(key) do
