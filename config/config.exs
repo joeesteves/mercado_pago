@@ -2,8 +2,8 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :mercado_pago, client_id: System.get_env("MP_CLIENT_ID")
-config :mercado_pago, client_secret: System.get_env("MP_CLIENT_SECRET")
+config :mercado_pago, client_id: System.get_env("MP_BAR_CLIENT_ID")
+config :mercado_pago, client_secret: System.get_env("MP_BAR_CLIENT_SECRET")
 config :mercado_pago, payment_methods: ["rapipago", "pagofacil"]
 config :mercado_pago, no_reply_mail: "no-reply@ceibo.co"
 
