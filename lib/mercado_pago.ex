@@ -12,7 +12,7 @@ defmodule MercadoPago do
   @api_domain "https://api.mercadopago.com/"
   @ep_token @api_domain <> "oauth/token"
   @grant_type_access "client_credentials"
-  @ep_checkout @api_domain <> "checkout/preferences"
+  @ep_checkout "checkout/preferences"
   @payment_methods Application.get_env(:mercado_pago, :payment_methods) || []
 
   # Dynamically generated functions
@@ -24,7 +24,7 @@ defmodule MercadoPago do
   end
 
   def get_payment(id) do
-    uri = end_point_url("v1/payments/")
+    uri = end_point_url("v1/payments/#{id}")
 
     case HTTPoison.get(uri) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
@@ -194,7 +194,7 @@ defmodule MercadoPago do
   end
 
   defp end_point_url(resource_url) do
-    resource_url <> "?access_token=" <> get_token()
+    @api_domain <> resource_url <> "?access_token=" <> get_token()
   end
 
   defp missing_conf_error(key) do
