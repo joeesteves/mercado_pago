@@ -58,7 +58,8 @@ defmodule MercadoPago do
 
         {:ok, link}
 
-      {:error, _} ->
+      {:error, e} ->
+        IO.inspect e
         {:error, "Error de conexion"}
     end
   end
@@ -157,8 +158,9 @@ defmodule MercadoPago do
 
   # Transforms link to legacy link
   defp transform_to_v0(link) do
+    IO.inspect link
     %{"pref_id" => pref_id} =
-      Regex.named_captures(~r/(?<base>^.+)v1\/redirect\?preference\-id=(?<pref_id>.+$)/, link)
+      Regex.named_captures(~r/(?<base>^.+)v1\/redirect\?(preference\-id|pref\_id)=(?<pref_id>.+$)/, link)
 
     "https://www.mercadopago.com/mla/checkout/start?pref_id=#{pref_id}"
   end
